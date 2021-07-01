@@ -1,0 +1,178 @@
+<head>
+	<title>💜MIRAI💜</title>
+	<link href="https://fonts.googleapis.com/css?family=Baloo&display=swap" rel="stylesheet">
+</head>
+<body>
+	<div id="header">
+		<img src="/client/img/miraiLogo.png">
+	</div>
+	<div id="loginDiv">
+	    username: <input class="login" id="loginDiv-username" type="text"></input><br>
+	    password: <input class="login" id="loginDiv-password" type="password"></input><br>
+	    <button class="login-reg" id="loginDiv-login">login</button>
+	    <button class="login-reg" id="loginDiv-register">register</button>
+	</div>
+
+	<div style="display: none; position: relative;" id="selectGender">
+	    <button class="gender" id="male">MALE</button>
+	    <button class="gender" id="female">FEMALE</button>
+	</div>
+
+	<div id="gameDiv" style="display: none; position: relative;">
+		<canvas id="ctx" width="700" height="500" style="position:absolute; border:1px solid gray;"></canvas>
+
+	</div>
+</body>
+<style>
+div {
+	opacity: 0.8;
+}
+#header {
+	text-align: center;
+}
+.login {
+	width: 15%;
+  padding: 3px 6px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+	background-color: purple;
+	font-family: 'Baloo', cursive;
+	font-size: 60%;
+	color: white;
+}
+#loginDiv {
+	font-family: 'Baloo', cursive;
+	font-size: 200%;
+	color: purple;
+	text-align: center;
+}
+.login-reg {
+	width: 15%;
+	color: white;
+	padding: 14px 20px;
+	margin: 8px 0;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+
+	font-family: 'Baloo', cursive;
+	font-size: 70%;
+	text-align: center;
+}
+#loginDiv-login {
+	background-color: #4CAF50;
+}
+#loginDiv-register {
+	background-color: grey;
+}
+#gameDiv {
+	position: absolute;
+	left: 25%;
+}
+.gender {
+	display: none;
+
+}
+</style>
+
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script>
+
+	var socket = io();
+
+	//login
+  var loginDiv = document.getElementById('loginDiv');
+  var loginDivUsername = document.getElementById('loginDiv-username');
+  var loginDivlogin = document.getElementById('loginDiv-login');
+  var loginDivregister = document.getElementById('loginDiv-register');
+  var loginDivPassword = document.getElementById('loginDiv-password');
+	var male = document.getElementById('male');
+	var female = document.getElementById('female');
+
+	male.onclick = function(){
+		socket.emit('male', 'male');
+	}
+	female.onclick = function() {
+		socket.emit('female', 'female');
+	}
+
+  loginDivlogin.onclick = function(){
+      socket.emit('login',{username:loginDivUsername.value,password:loginDivPassword.value});
+
+  }
+  loginDivregister.onclick = function(){
+      socket.emit('register',{username:loginDivUsername.value,password:loginDivPassword.value});
+  }
+  socket.on('loginResponse',function(data){
+      if(data.success){
+          loginDiv.style.display = 'none';
+					selectGender.style.display = 'inline-block';
+          gameDiv.style.display = 'inline-block';
+      } else
+          alert("❀ incorrect username/password ❀");
+  });
+  socket.on('registerResponse',function(data){
+      if(data.success){
+          alert("❀ account created ❀");
+      } else
+          alert("❀ an error has occured :c please try again ❀");
+  });
+
+	// game
+	var cvs = document.getElementById("ctx");
+	var ctx = document.getElementById("ctx").getContext("2d");
+	var fBase = new Image();
+  fBase.src = "client/img/female-base.png";
+	var mBase = new Image();
+  mBase.src = "client/img/male-base.png";
+	//var msg = "";
+
+	ctx.font = "400px Arial";
+
+
+	socket.on('newPositions',function(data){
+		ctx.clearRect(0,0,700,500);
+		for(var i = 0 ; i < data.player.length; i++) {
+			//ctx.fillText(data[i].number,data[i].x,data[i].y);
+			if (data.player[i].gender === 'female') {
+				ctx.drawImage(fBase,data.player[i].sx,0,58,120,data.player[i].x,data.player[i].y,58,120);
+			//ctx.fillText(data[i].msg,data[i].x,data[i].y);
+			}
+			else {
+				ctx.drawImage(mBase,data.player[i].sx,0,58,130,data.player[i].x,data.player[i].y,58,130);
+			}
+		}
+	});
+
+
+	function mouseUp() {
+		socket.emit('mouseUp', false);
+  	console.log('bee');
+}
+
+	document.onkeydown = function(event){
+		if(event.keyCode === 39)	//d
+			socket.emit('keyPress',{inputId:'right',state:true});
+		else if(event.keyCode === 40)	//s
+			socket.emit('keyPress',{inputId:'down',state:true});
+		else if(event.keyCode === 37) //a
+			socket.emit('keyPress',{inputId:'left',state:true});
+		else if(event.keyCode === 38) // w
+			socket.emit('keyPress',{inputId:'up',state:true});
+
+	}
+	document.onkeyup = function(event){
+		if(event.keyCode === 39)	//d
+			socket.emit('keyPress',{inputId:'right',state:false});
+		else if(event.keyCode === 40)	//s
+			socket.emit('keyPress',{inputId:'down',state:false});
+		else if(event.keyCode === 37) //a
+			socket.emit('keyPress',{inputId:'left',state:false});
+		else if(event.keyCode === 38) // w
+			socket.emit('keyPress',{inputId:'up',state:false});
+	}
+
+</script>
